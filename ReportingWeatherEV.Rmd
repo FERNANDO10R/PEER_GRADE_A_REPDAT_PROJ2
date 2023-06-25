@@ -1,0 +1,69 @@
+---
+title: "Main Weather Events Impacting The Health and Economy of the People and Community"
+author: "Fernando Ruiz"
+date: "2023-06-22"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+# 1.Data Policy
+
+The data used in this study it's`provided by United States National Oceanic and Atmospheric Administration. This institution configure a data base with the data of different storms and other strong nature events occured across the United States  since 1950 to 2011, in this data is included the every type of every atmospheric event (48 defined) and settled the consecunces not only in the affectation on people health and integrity but also in the economic matters.
+
+## 1.1 download and reading the data
+
+The data it`s  loaded to an R enviroment directly from the Coursera Data Reproducible Course website. The file is compressed by a "bzip2" algorithm.  
+the scriopts to read and processing the data are located in the following GitHub repository:
+"https://github.com/FERNANDO10R/PEER_GRADE_A_REPDAT_PROJ2.git"
+
+## 2. File Desciption
+
+The file(data frame) has 902,297 observations and 37 variables settled.One grouppf these variables identifies the names of the states and counties where the catastrophic events  ocurred including their respective code names,longitude and latitude, dates and times  of the beginning and the ending of the events. Also describes the county where the event begun and the county wher it finished. 
+
+Another variable group consider the type of the event (specifically the name of that variable is :"EVTYPE");
+
+The final group corresponding to the consecuences of the catastrophical events in matters such: Injuries, fatalities and economic looses,these last are divided into two levels: damage to a property and damage to a crops. The specificvaraiables names in the data frame are: "FATALITIES","INJURIES","PROPDMG" and "CROPDMG". Especially in the groupof economic consecuences ther are two variables to consider: "PROPDMGEXP" and "CROPDMGEXP", these varables express the the monetary units of the ecomonic values (B, corrresponds a billions of dollar, k for thosands and M for millions).  
+
+```{r load_read, message=FALSE,warning=FALSE}
+download.file("https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2","StormData.csv.bz2")
+df <- read.csv("StormData.csv.bz2")
+```
+
+
+
+# Data Processing
+
+## (describes how the data were load into R and prosseced for tha analsys)
+
+
+
+# Data Analysis Summary
+
+# Synopsis Data Analysis Summary
+
+#Results \## note:at least one plot and at least 3 figure
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
