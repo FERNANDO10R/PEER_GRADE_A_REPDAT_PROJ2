@@ -73,7 +73,10 @@ if(sna==0){cat("There are not missing values in the variables observations")}els
 
 #3.2  Data Analysis Summary
 
+```{r summa_ry }
 
+
+```
 
 # Synopsis Data Analysis Summary
 
