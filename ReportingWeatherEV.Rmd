@@ -40,19 +40,26 @@ The data is downloaded using R functions (version 4,3,0) as shown below:
 ```{r load_read, message=FALSE,warning=FALSE}
 download.file("https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2","StormData.csv.bz2")
 df <- read.csv("StormData.csv.bz2")
+df <-subset(df,select=-c(REMARKS,ZONENAMES.STATEOFFIC))
+
 
 library(dplyr)
 library(lubridate)
 
-df$BGN_DATE <- as.Date(df$BGN_DATE)
+df$BGN_DATE <-gsub(" 0:00:00","",df$BGN_DATE)
+
+df$BGN_DATE <- as.Date(df$BGN_DATE, format = "%m/%d/%Y")
 
 df <- mutate(df, PROPDMGMUS = ifelse(df$PROPDMGEXP == "K", df$PROPDMG / 1000, ifelse(df$PROPDMGEXP == "B", df$PROPDMG * 1000, df$PROPDMG)))
 
 df <- mutate(df, CROPDMGMUS = ifelse(df$CROPDMGEXP == "K", df$CROPDMG / 1000, ifelse(df$CROPDMGEXP == "B", df$CROPDMG * 1000, df$CROPDMG)))
+
+df <-mutate(df,PUBLICCONSG=df$FATALITIES+df$INJURIES)
 ```
 
-The data frame (df) is modified adding two columns to settled the economic damages (property and crop) in million of dollars.These columns are: "PROPDMGMUS" and "CROPDMGMUS".
+The data frame (df) is modified adding two columns to settled the economic damages (property and crop) in million of dollars.These columns are: "PROPDMGMUS" and "CROPDMGMUS". Also a column name "PUBLICCONSG" is added to sum the general effects in pubñic in matters such iinjuries and fatalities.
 
+The data is also modified by removing the columns:"REMARKS","ZONENAMES"and "STATEOFFIC",these columns are not important for the porpuses of this paper and contibuting to clean the data frame. 
 
 # 3.1 Reviewing the NA values.
 
@@ -75,9 +82,20 @@ if(sna==0){cat("There are not missing values in the variables observations")}els
 
 ```{r summa_ry }
 
-sm_df <- subset[,c("df$EVTYPE","df$FATALITIES","df$INJURIES",df$PROPDMGMUS,df$CROPDMGMUS)]
+resum <- df %>% summarise(fat = sum(FATALITIES),inj = sum(INJURIES),pdmg = sum(PROPDMG),cdmg =sum(CROPDMG))
+
+remean <- df %>% summarise(mfat = mean(FATALITIES),minj = mean(INJURIES),mpdmg = mean(PROPDMG),mcdmg =mean(CROPDMG))
+
+restd <- df %>% summarise(sfat = sdv(FATALITIES),sinj = sdv(INJURIES),spdmg = sdv(PROPDMG),scdmg =sdv(CROPDMG))
+
+table(resum,remean,restd)
+
+#sm_df <- group_by(df,year(df$BGN_TIME))
+
+#sm <-summarise(sm_df,)
 
 ```
+
 
 # Synopsis Data Analysis Summary
 
