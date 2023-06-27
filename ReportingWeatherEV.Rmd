@@ -75,6 +75,7 @@ if(sna==0){cat("There are not missing values in the variables observations")}els
 
 ```{r summa_ry }
 
+sm_df <- subset[,c("df$EVTYPE","df$FATALITIES","df$INJURIES",df$PROPDMGMUS,df$CROPDMGMUS)]
 
 ```
 
