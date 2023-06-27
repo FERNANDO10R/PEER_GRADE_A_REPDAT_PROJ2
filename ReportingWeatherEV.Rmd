@@ -82,22 +82,28 @@ if(sna==0){cat("There are not missing values in the variables observations")}els
 
 ```{r summa_ry }
 
-resum <- df %>% summarise(fat = sum(FATALITIES),inj = sum(INJURIES),pdmg = sum(PROPDMG),cdmg =sum(CROPDMG))
+resum <- df %>% summarise(fat = sum(FATALITIES),inj = sum(INJURIES),pdmg = sum(PROPDMGMUS),cdmg =sum(CROPDMGMUS))
 
-remean <- df %>% summarise(mfat = mean(FATALITIES),minj = mean(INJURIES),mpdmg = mean(PROPDMG),mcdmg =mean(CROPDMG))
+remean <- df %>% summarise(mfat = mean(FATALITIES),minj = mean(INJURIES),mpdmg = mean(PROPDMGMUS),mcdmg =mean(CROPDMGMUS))
 
-restd <- df %>% summarise(sfat = sdv(FATALITIES),sinj = sdv(INJURIES),spdmg = sdv(PROPDMG),scdmg =sdv(CROPDMG))
+restd <- df %>% summarise(sfat = sdv(FATALITIES),sinj = sdv(INJURIES),spdmg = sdv(PROPDMGMUS),scdmg =sdv(CROPDMGMUS))
 
 table(resum,remean,restd)
 
-#sm_df <- group_by(df,year(df$BGN_TIME))
 
-#sm <-summarise(sm_df,)
 
 ```
 
 
 # Synopsis Data Analysis Summary
+```{r Analy_sis }
+
+sm_df <- group_by(df,year(df$BGN_TIME))
+
+sum_sm_df<- sm_df %>% summarise(ninj=sum(INJURIES),nfat=sum(FATALITIES),npdmg=sum(PROPDMGMUS),ncdmg =sum(CROPDMGMUS))
+
+
+```
 
 #Results \## note:at least one plot and at least 3 figure
 
