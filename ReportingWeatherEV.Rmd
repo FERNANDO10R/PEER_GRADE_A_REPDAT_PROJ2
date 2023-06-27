@@ -98,10 +98,15 @@ table(resum,remean,restd)
 # Synopsis Data Analysis Summary
 ```{r Analy_sis }
 
-sm_df <- group_by(df,year(df$BGN_TIME))
+sm_df <- group_by(df,year(df$BGN_DATE))
 
 sum_sm_df<- sm_df %>% summarise(ninj=sum(INJURIES),nfat=sum(FATALITIES),npdmg=sum(PROPDMGMUS),ncdmg =sum(CROPDMGMUS))
 
+par(mfrow=c(1,2))
+with(sum_sm_df,plot(BGN_DATE,INJURIES, col="red",type="l",xlab="Year", ylab="Quanity",main="effects in the public health"))
+abline(sum_sm_df$BGN_DATE,sum_sm_df$FATALITIES, col="orange")
+with(sum_sm_df,plot(BGN_DATE,PROPDMGMUS,col="blue", xlab="Year", ylab="US Dollar Millions", main="Economic costs of Weathwr Events"))
+abline(sum_sm_df$BGN_DATE,sum_sm_df$CROPDMGMUS,col="magenta")
 
 ```
 
