@@ -34,7 +34,7 @@ The final group corresponding to the consequences of the catastrophically events
 
 The data is downloaded using R functions (version 4,3,0) as shown below:
 
-```{r load_read, message=FALSE,warning=FALSE}
+```{r load_read, message=FALSE,warning=FALSE, cache.comments=FALSE}
 download.file("https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2","StormData.csv.bz2")
 df <- read.csv("StormData.csv.bz2")
 df <-subset(df,select=-c(REMARKS,ZONENAMES,STATEOFFIC))
@@ -43,13 +43,15 @@ df <-subset(df,select=-c(REMARKS,ZONENAMES,STATEOFFIC))
 library(dplyr)
 library(lubridate)
 
+df$EVTYPE<- as.factor(df$EVTYPE)
+
 df$BGN_DATE <-gsub(" 0:00:00","",df$BGN_DATE)
 
 df$BGN_DATE <- as.Date(df$BGN_DATE, format = "%m/%d/%Y")
 
 df <- mutate(df, PROPDMGMUS = ifelse(df$PROPDMGEXP == "K", df$PROPDMG / 1000, ifelse(df$PROPDMGEXP == "B", df$PROPDMG * 1000, df$PROPDMG)))
 
-df <- mutate(df, CROPDMGMUS = ifelse(df$CRdf1_odOPDMGEXP == "K", df$CROPDMG / 1000, ifelse(df$CROPDMGEXP == "B", df$CROPDMG * 1000, df$CROPDMG)))
+df <- mutate(df, CROPDMGMUS = ifelse(df$CROPDMGEXP == "K", df$CROPDMG / 1000, ifelse(df$CROPDMGEXP == "B", df$CROPDMG * 1000, df$CROPDMG)))
 
 df <-mutate(df,PUBLICCONSG=df$FATALITIES+df$INJURIES)
 ```
@@ -124,8 +126,7 @@ Total economic damage in USD billions: `r tecdmag`
 
 The main affectation to public integrity is related with injuries. Respecting the economic damage the property affection is higher than the crop damage.
 
-The proportion of injuries in the total public health affectation is `r ingprop` % and the proportion of property damage of the total of economic damage is : `r pdmagprop` %. 
-
+The proportion of injuries in the total public health affectation is `r ingprop` % and the proportion of property damage of the total of economic damage is : `r pdmagprop` %.
 
 #4. Results \## note:at least one plot and at least 3 figure
 
@@ -146,16 +147,14 @@ legend("topleft",legend = c("ninj","nfat"), col=c("green","red"),lty = 1:2)
 with(sum_sm_df,plot(sum_sm_df$year,sum_sm_df$npdmg,col="blue",type="l", xlab="Year", ylab="US Dollar Millions", main="Economic costs of Weather Events"))
 lines(sum_sm_df$year,sum_sm_df$ncdmg,col="brown")
 legend("topleft",legend = c("npdmg","ncdmg"),col = c("blue","brown"),lty = 1:2)
-``` 
-
+```
 
 Since 1990 decade a trend tendency change is observed, the quantity of public health affectation and the economic costs of the weather events growed significantly.
 
 In a Pareto analysis the 80% of the public health affectation corresponds to:
 
-
 ```{r evefrec }
-library(qcc)
+
 df1 <-subset(df,select=c("EVTYPE","PUBLICCONSG"))
 df1_orded <- df1[order(df1$PUBLICCONSG),]
 df1_orded <-mutate(df1_orded,suma_acumulada=cumsum(df1_orded$PUBLICCONSG))
@@ -163,33 +162,149 @@ df1_orded <- mutate(df1_orded,porcent_acum=suma_acumulada/sum(df1_orded$PUBLICCO
 causes <-filter(df1_orded,porcent_acum >=0.8)
 causfac <-factor(causes$EVTYPE)
 mimpcauses <-table(causfac)
-kable(minpcauses)
+kable(mimpcauses)
 
 ```
 
 Graphically the scenario is as follow:
-```{r Pareto_health }
+
+```{r Pareto_health, cache.comments=FALSE}
 
 cause_plot <- select(causes,c("porcent_acum","EVTYPE"))
+cause_plot$EVTYPE <-unclass(cause_plot$EVTYPE)
+
+with(cause_plot,hist(EVTYPE,col="blue", xlab="type of atmospherical event",ylab="frquency",main="Principal Causes of Public Health Affectation"))
+lines(cause_plot$porcent_acum)
+
+
 
 ```
 
-## R Markdown
+In a Pareto analysis, the 80% of the economic damage corresponds to:
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+```{r evefeconomic }
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
 
-```{r cars}
-summary(cars)
+df2 <-subset(df,select=c("EVTYPE","PROPDMGMUS", "CROPDMGMUS"))
+
+df2 <-mutate(df2,TOTALECDMG= PROPDMGMUS + CROPDMGMUS)
+df2_orded <- df2[order(df2$TOTALECDMG),]
+df2_orded <-mutate(df2_orded,suma_acumulada=cumsum(df2_orded$TOTALECDMG))
+df2_orded <- mutate(df2_orded,porcent_acum=suma_acumulada/sum(df2_orded$TOTALECDMG))
+causes_2 <-filter(df2_orded,porcent_acum >=0.8)
+causfac2 <-factor(causes_2$EVTYPE)
+mimpcauses2 <-table(causfac2)
+kable(mimpcauses2)
+
 ```
 
-## Including Plots
+The result is the "Flood" event with a single occurrence. This output is consequence of the catastrophically flood event which represents almost the 24% of the cumulative probability, this is observed in the table below:
 
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
+```{r tail }
+print(tail(df2_orded))
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+```{r max_event }
+max_index <- which.max(df$PROPDMGMUS)
+max_date <- df$BGN_DATE[max_index]
+max_edamg <- df$PROPDMGMUS[max_index]
+max_type <- df$EVTYPE[max_index]
+```
+
+The catastrophically event is found in the data frame with occurrence date `r max_date`,  the corresponding property damage is `r max_edamg` in million of USD, and the cooresponding type of event is `r max_type`. This event is related with the Katrina flood, took place in August of 2005 and registered in 2006. CNN News published in 2021 an article about this disaster. This article can be reading (in Spanish) in the follwing link:"<https://cnnespanol.cnn.com/2021/08/30/fast-facts-datos-huracan-katrina-datos-trax/>".
+
+In this case it is necessary to define a higher range of the analysis considering what causes the 60% of the economic damage. This is observe in the table shown below:
+
+```{r evefeconomic }
+
+
+df2 <-subset(df,select=c("EVTYPE","PROPDMGMUS", "CROPDMGMUS"))
+
+df2 <-mutate(df2,TOTALECDMG= PROPDMGMUS + CROPDMGMUS)
+df2_orded <- df2[order(df2$TOTALECDMG),]
+df2_orded <-mutate(df2_orded,suma_acumulada=cumsum(df2_orded$TOTALECDMG))
+df2_orded <- mutate(df2_orded,porcent_acum=suma_acumulada/sum(df2_orded$TOTALECDMG))
+causes_2 <-filter(df2_orded,porcent_acum >=0.6)
+causfac2 <-factor(causes_2$EVTYPE)
+mimpcauses2 <-table(causfac2)
+kable(mimpcauses2)
+```
+
+Although Katrina caused a lot of damage and cannot be ruled out in response to the questions raised and also considering that it is a very occasional repeat event, it can be minimize to find other risk factors that the authorities should consider as potentially harmful to the health of the people and the economy in general.
+
+Without the Katrina disaster, the Pareto analysis, the 80% of the economic damage is the result of the occurrence of:
+
+
+```{r evefeconomic_wtiho }
+
+
+df2 <-subset(df,select=c("EVTYPE","PROPDMGMUS", "CROPDMGMUS"))
+
+df2 <-mutate(df2,TOTALECDMG= PROPDMGMUS + CROPDMGMUS)
+
+max2_index <- which.max(df2$TOTALECDMG)
+df2$TOTALECDMG[max2_index] <-0
+
+df2_orded <- df2[order(df2$TOTALECDMG),]
+df2_orded <-mutate(df2_orded,suma_acumulada=cumsum(df2_orded$TOTALECDMG))
+df2_orded <- mutate(df2_orded,porcent_acum=suma_acumulada/sum(df2_orded$TOTALECDMG))
+causes_2 <-filter(df2_orded,porcent_acum >=0.8)
+causfac2 <-factor(causes_2$EVTYPE)
+mimpcauses2 <-table(causfac2)
+kable(mimpcauses2)
+```
+
+Graphically the scenario is as follow:
+
+```{r Pareto_ecwitho, cache.comments=FALSE}
+
+cause_plot <- select(causes_2,c("porcent_acum","EVTYPE"))
+cause_plot$EVTYPE <-unclass(cause_plot$EVTYPE)
+
+with(cause_plot,hist(EVTYPE,col="blue", xlab="type of atmospherical event",ylab="frquency",main="Principal Causes of Econimic Damage"))
+
+```
+
+A similar analysis to the economic damage may be settled to the public health affectation. Without Katrina disaster,  the Pareto analysis, the 80% of the economic damage is the result of the occurrence of:
+
+```{r evefrec_witho }
+
+df3 <-subset(df,select=c("EVTYPE","PUBLICCONSG"))
+max_index3 <- which.max(df3$PUBLICCONSG)
+df3$PUBLICCONSG[max_index3]<-0
+df3_orded <- df3[order(df3$PUBLICCONSG),]
+df3_orded <-mutate(df3_orded,suma_acumulada=cumsum(df3_orded$PUBLICCONSG))
+df3_orded <- mutate(df3_orded,porcent_acum=suma_acumulada/sum(df3_orded$PUBLICCONSG))
+causes3 <-filter(df3_orded,porcent_acum >=0.8)
+causfac3 <-factor(causes3$EVTYPE)
+mimpcauses3 <-table(causfac3)
+kable(mimpcauses3)
+
+```
+
+Graphically the scenario is as follow:
+
+
+```{r Pareto_health_withot, cache.comments=FALSE}
+
+cause_plot3 <- select(causes3,c("porcent_acum","EVTYPE"))
+cause_plot3$EVTYPE <-unclass(cause_plot3$EVTYPE)
+
+with(cause_plot3,hist(EVTYPE,col="blue", xlab="type of atmospherical event",ylab="frquency",main="Principal Causes of Public Health Affectation Withot the Kattrina Disaster"))
+
+```
+
+#5.  Conclussions
+## 5.1 Public Health Affectations
+
+Regardless the effect Katrina the atmospheric events that cause the major affectation to public health and public survival are: Tornados, mainly, and Floods. 
+
+## 5.2 Economic Damage
+
+In economic natters there are not dominant causes,the data interpretation trends to show a few type of events causing the major economic costs, these are : Flood, Hurricane Typhon, River Flood and Storm Surge. These events may occur with intensive strength caussing severe economic damage.
+
+## 5.3 Summarizing.
+
+It can be observed that flood and wind events (Tornados and Hurricane) are in the causes of public health affectation and economic damage. This allows to public administrators take a unified public policy to protect not only the people but also the economic infrastructure (state or public infrstructure and families property), this mean that they can optimized the public disaster budget.   
+
+
