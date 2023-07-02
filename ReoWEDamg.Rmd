@@ -1,0 +1,324 @@
+---
+title: "Main Weather Events Impacting The Health and Economy of the People and Community"
+author: "Fernando Ruiz"
+date: "2023-07-01"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::render_html()
+```
+
+
+# Synopsis
+
+The analysis of the main causes of public health affectation and economic damages for atmospheric events is based in the data of the NOAA Storm data base. The period considered is from the year 1950 to 2011. This data is loaded in R Environment and transform  to get a more suitable data frame. The analysis is based in Pareto principle to determine the causes that generate the 80% of the catastrophically results in public affectations and economic damage. The results will show strong wind and floods events causing the most harmful effect to public health and economic damage. A very catastrophic event has been found both in terms of the affectation to the health of the people and the economic damage to the infrastructures, such as the Katrina disaster, this force to  analyze  the data with and without it.
+
+# 1. Objetive
+
+The objective of this paper is first,describe which types of weather events are most harmful with respect to population health and, second, which types of these events have the greatest economic consequences.
+
+# 2.Data Policy
+
+The data used in this study it is\`provided by United States National Oceanic and The Atmospheric Administration. This institution configure a data base with the data of different storms and other strong
+
+nature events occurred across the United States since 1950 to 2011, in this data is included the every type of atmospheric event (48 defined) and settled the consequences not only in the affectation on people health and integrity but also in the economic matters.
+
+## 2.1 download and reading the data
+
+The data it is loaded to an R enviroment directly from the Coursera Data Reproducible Course website. The file is compressed by a "bzip2" algorithm. The scripts to read and processing the data are located in the following GitHub repository: "<https://github.com/FERNANDO10R/PEER_GRADE_A_REPDAT_PROJ2.git>"
+
+## 2.2 File Desciption
+
+The file(data frame) has 902,297 observations and 37 variables settled.One group of these variables identifies the names of the states and counties where the catastrophic events have occurred including their respective code names,geographical longitude and latitude, dates and times of the beginning and the ending of the events. Also describes the county where the event begun and the county where it finished.
+
+Another variable group consider the type of the event (specifically the name of that variable is :"EVTYPE");and another type of event characteristics description.
+
+The final group corresponding to the consequences of the catastrophically events in matters such: Injuries, fatalities and economic looses,these last are divided into two levels: damage to a property and damage to a crops. The specific variables names in the data frame are: "FATALITIES","INJURIES","PROPDMG" and "CROPDMG". Especially in the group of economic consequences ther are two variables to consider: "PROPDMGEXP" and "CROPDMGEXP", these variables express the monetary units of the economic values (B, corresponds a billions of dollar, k for thousands and M for millions).
+
+# 3. Data Processing.
+
+The data is downloaded using R functions (version 4,3,0) as shown below:
+
+```{r load_read, message=FALSE,warning=FALSE, cache.comments=FALSE}
+download.file("https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2","StormData.csv.bz2")
+df <- read.csv("StormData.csv.bz2")
+df <-subset(df,select=-c(REMARKS,ZONENAMES,STATEOFFIC))
+
+
+library(dplyr)
+library(lubridate)
+
+df$EVTYPE<- as.factor(df$EVTYPE)
+
+df$BGN_DATE <-gsub(" 0:00:00","",df$BGN_DATE)
+
+df$BGN_DATE <- as.Date(df$BGN_DATE, format = "%m/%d/%Y")
+
+df <- mutate(df, PROPDMGMUS = ifelse(df$PROPDMGEXP == "K", df$PROPDMG / 1000, ifelse(df$PROPDMGEXP == "B", df$PROPDMG * 1000, df$PROPDMG)))
+
+df <- mutate(df, CROPDMGMUS = ifelse(df$CROPDMGEXP == "K", df$CROPDMG / 1000, ifelse(df$CROPDMGEXP == "B", df$CROPDMG * 1000, df$CROPDMG)))
+
+df <-mutate(df,PUBLICCONSG=df$FATALITIES+df$INJURIES)
+```
+
+The data frame (df) is modified adding two columns to settled the economic damages (property and crop) in million of dollars.These columns are: "PROPDMGMUS" and "CROPDMGMUS". Also a column name "PUBLICCONSG" is added to sum the general effects in pubic in matters such injuries and fatalities.
+
+The data is also modified by removing the columns:"REMARKS","ZONENAMES"and "STATEOFFIC",these columns are not important for the purpose of this paper and contributing to clean the data frame.
+
+## 3.1 Reviewing the missing values.
+
+The policy to manage the NA values for the interest variables ("EVTYPE","FATALITIES","INJURIES","PROPDMG",and "CROPDMG") is consider valid a maximum of 5% of the NA in each variable. If that values exist (NA),and if the quantity of these values is higher than 5%, they will replace by an average of the values for the corresponding variable.
+
+```{r missing_val }
+ t <-sum(is.na(c("EVTYPE","FATALITIES","INJURIES","PROPDMG","CROPDMG")))
+sna <-t/5
+
+if(sna==0){cat("There are not missing values in the variables observations")}else{if(sna>0.05*902297){cat("The Na values policy has to be applicated")}else{cat("No further actions are required to fix na values")}}
+
+```
+
+# 4. Data Analysis Summary
+
+The total and other measures of injuries, fatalities and econimic damages caused for weather events since 1950 to 2011 is shown bellow:
+
+## 4.1 The total of fatalities(fat), injuries (inj),property damage (pdmg) and crop costs (cdmg):
+
+```{r summa_ry, results='asis',cache.comments=FALSE}
+library(knitr)
+
+resum <- df %>% summarise(fat = sum(FATALITIES),inj = sum(INJURIES),pdmg = sum(PROPDMGMUS),cdmg =sum(CROPDMGMUS))
+
+remean <- df %>% summarise(mfat = mean(FATALITIES),minj = mean(INJURIES),mpdmg = mean(PROPDMGMUS),mcdmg =mean(CROPDMGMUS))
+
+restd <- df %>% summarise(sfat = sd(FATALITIES),sinj = sd(INJURIES),spdmg = sd(PROPDMGMUS),scdmg =sd(CROPDMGMUS))
+
+kable(resum)
+
+
+```
+
+## 4.2 The average of the data is:
+
+```{r mean_ry,results='asis',cache.comments=FALSE}
+kable(remean)
+```
+
+## 4.3 The standard deviation of the data is:
+
+```{r std_ry, results='asis',cache.comments=FALSE}
+kable(restd)
+```
+
+## 4.4 Data Analysis Summary
+
+```{r Sym_sis }
+tpefec <- resum[1]+resum[2]
+tecdmag <- (resum[3]+resum[4])/1000
+
+# Proportioo of injuries in the total
+injprop <-resum[2]/tpefec*100
+# Proportion of property danmages of the total
+pdmagprop <- resum[3]/tecdmag*100
+tx1<- paste("a. Totalaffectation to public: ",tpefec)
+tx2 <- paste("b. Total economic damage in USD billions: ",tecdmag)
+tx3<-paste("The proportion of injuries in the total public health affectation is: ",injprop," %")
+tx4 <- paste("and the proportion of property damage of the total of economic damage is: ",pdmagprop, "%")
+cat(tx1,"\n")
+cat(tx2,"\n")
+cat("The main affectation to public integrity is related with injuries","\n")
+cat("Respecting the economic damage the property affection is higher than the crop damage","\n")
+cat(tx3,"\n")
+cat(tx4,"\n")
+```
+# 5. Results
+
+## 5.1 General Results.
+
+The first topic considered is the observation of the trends of the weather catastrophic events in the public integrity and the economical affectation, these trends can been observe in the below plot:
+
+```{r Analy_sis }
+
+sm_df <- group_by(df,year(df$BGN_DATE))
+
+sum_sm_df<- sm_df %>% summarise(ninj=sum(INJURIES),nfat=sum(FATALITIES),npdmg=sum(PROPDMGMUS),ncdmg =sum(CROPDMGMUS))
+
+colnames(sum_sm_df)[1] <-"year"
+
+par(mfrow=c(1,2))
+with(sum_sm_df,plot(sum_sm_df$year,sum_sm_df$ninj, col="green",type="l",xlab="Year", ylab="Quanity",main="Effects in the public health"))
+lines(sum_sm_df$year,sum_sm_df$nfat, col="red")
+legend("topleft",legend = c("ninj","nfat"), col=c("green","red"),lty = 1:2)
+with(sum_sm_df,plot(sum_sm_df$year,sum_sm_df$npdmg,col="blue",type="l", xlab="Year", ylab="US Dollar Millions", main="Economic costs of Weather Events"))
+lines(sum_sm_df$year,sum_sm_df$ncdmg,col="brown")
+legend("topleft",legend = c("npdmg","ncdmg"),col = c("blue","brown"),lty = 1:2)
+```
+
+Since 1990 decade a trend tendency change is observed, the quantity of public health affectation and the economic costs of the weather events growed significantly.
+
+## 5.2 Public Health and Live Integrity Atmospherical Events Causes.
+
+In a Pareto analysis the 80% of the public health affectation corresponds to:
+
+```{r evefrec, results='asis'}
+
+df1 <-subset(df,select=c("EVTYPE","PUBLICCONSG"))
+df1_orded <- df1[order(df1$PUBLICCONSG),]
+df1_orded <-mutate(df1_orded,suma_acumulada=cumsum(df1_orded$PUBLICCONSG))
+df1_orded <- mutate(df1_orded,porcent_acum=suma_acumulada/sum(df1_orded$PUBLICCONSG))
+causes <-filter(df1_orded,porcent_acum >=0.8)
+causfac <-factor(causes$EVTYPE)
+mimpcauses <-table(causfac)
+kable(mimpcauses)
+
+```
+Graphically the scenario is as follow:
+
+```{r Pareto_health, cache.comments=FALSE}
+cause_plot <- select(causes,c("porcent_acum","EVTYPE"))
+cause_plot$EVTYPE <-unclass(cause_plot$EVTYPE)
+
+with(cause_plot,hist(EVTYPE,col="blue", xlab="type of atmospherical event",ylab="frquency",main="Principal Causes of Public Health Affectation"))
+
+```
+
+## 5.3 Economic Damage for Atmospherical Eventes.
+
+In a Pareto analysis, the 80% of the economic damage corresponds to:
+
+```{r evefeconomic2, results='asis', cache.comments=FALSE}
+df2 <-subset(df,select=c("EVTYPE","PROPDMGMUS", "CROPDMGMUS"))
+df2 <-mutate(df2,TOTALECDMG= PROPDMGMUS + CROPDMGMUS)
+df2_orded <- df2[order(df2$TOTALECDMG),]
+df2_orded <-mutate(df2_orded,suma_acumulada=cumsum(df2_orded$TOTALECDMG))
+df2_orded <- mutate(df2_orded,porcent_acum=suma_acumulada/sum(df2_orded$TOTALECDMG))
+causes_2 <-filter(df2_orded,porcent_acum >=0.8)
+causfac2 <-factor(causes_2$EVTYPE)
+mimpcauses2 <-table(causfac2)
+kable(mimpcauses2)
+```
+The result is the "Flood" event with a single occurrence. This output is consequence of the one catastrophically flood event which represents almost the 24% of the cumulative probability, this is observed below:
+
+```{r tail_file, cache.comments=FALSE}
+
+ind<-nrow(df2_orded)
+perce_prev100 <- df2_orded$porcent_acum[ind-1]
+text1 <-paste("The cumulative percentage prior to 100% is: ",perce_prev100," %")
+damagecost_prev100 <- df2_orded$suma_acumulada[ind-1]
+text2 <- paste("The cumulative economic damages previous to total(cum) is: ",damagecost_prev100," Million USD")
+damagecost100 <- df2_orded$suma_acumulada[ind]
+text3<-paste("The 100% (cumulative) economic damages is: ",damagecost100," Million USD")
+cat(text1,"\n")
+cat(text2,"\n")
+cat(text3,"\n")
+```
+
+
+```{r max_event }
+max_index <- which.max(df$PROPDMGMUS)
+max_date <- df$BGN_DATE[max_index]
+max_edamg <- df$PROPDMGMUS[max_index]
+max_type <- df$EVTYPE[max_index]
+tx5 <- paste("The catastrophically event is found in the data frame with occurrence date: ",max_date)
+tx6 <- paste("the corresponding property damage is: ",max_edamg," Million USD")
+tx7 <-paste("and the corresponding type of event is ", max_type)
+cat(tx5,"\n")
+cat(tx6,"\n")
+cat(tx7,"\n")
+```
+
+This event is related with the Katrina flood that took place in August of 2005 and registeredin the census in 2006. CNN News published in 2021 an article about this disaster. This article can be reading (in Spanish) in the follwing link:"https://cnnespanol.cnn.com/2021/08/30/fast-facts-datos-huracan-katrina-datos-trax".
+
+## 5.4 Adjustment of the results discounting the most catastrophic event.
+
+### 5.4.1 Economic Damage.
+
+In this case it is necessary to define a higher range of the analysis considering what causes the 60% of the economic damage. This is observe in the table shown below:
+
+```{r evefeconomic }
+
+causes_4 <-filter(df2_orded,porcent_acum >=0.6)
+causfac4 <-factor(causes_4$EVTYPE)
+mimpcauses4 <-table(causfac4)
+kable(mimpcauses4)
+```
+
+Although Katrina caused a lot of damage and cannot be ruled out in response to the questions raised in this paper, and also considering that it is a very occasional repeat event, it can be minimize to find other risk factors that the authorities should consider as potentially harmful to the health of the people and the economy in general.
+
+Without the Katrina disaster, the Pareto analysis, the 80% of the economic damage is the result of the occurrence of:
+
+```{r evefeconomic_wtiho }
+
+
+df2 <-subset(df,select=c("EVTYPE","PROPDMGMUS", "CROPDMGMUS"))
+
+df2 <-mutate(df2,TOTALECDMG= PROPDMGMUS + CROPDMGMUS)
+
+max2_index <- which.max(df2$TOTALECDMG)
+df2$TOTALECDMG[max2_index] <-0
+
+df2_orded <- df2[order(df2$TOTALECDMG),]
+df2_orded <-mutate(df2_orded,suma_acumulada=cumsum(df2_orded$TOTALECDMG))
+df2_orded <- mutate(df2_orded,porcent_acum=suma_acumulada/sum(df2_orded$TOTALECDMG))
+causes_2 <-filter(df2_orded,porcent_acum >=0.8)
+causfac2 <-factor(causes_2$EVTYPE)
+mimpcauses2 <-table(causfac2)
+kable(mimpcauses2)
+```
+
+Graphically the scenario is as follow:
+
+```{r Pareto_ecwitho, cache.comments=FALSE}
+
+cause_plot <- select(causes_2,c("porcent_acum","EVTYPE"))
+cause_plot$EVTYPE <-unclass(cause_plot$EVTYPE)
+
+with(cause_plot,hist(EVTYPE,col="green", xlab="type of atmospherical event",ylab="frquency",main="Principal Causes of Econimic Damage"))
+
+```
+
+### 5.4.2 Public Health Affectation.
+
+A similar analysis to the economic damage may be settled to the public health affectation. Without Katrina disaster, the Pareto analysis, the 80% of the economic damage is the result of the occurrence of:
+
+```{r evefrec_witho }
+
+df3 <-subset(df,select=c("EVTYPE","PUBLICCONSG"))
+max_index3 <- which.max(df3$PUBLICCONSG)
+df3$PUBLICCONSG[max_index3]<-0
+df3_orded <- df3[order(df3$PUBLICCONSG),]
+df3_orded <-mutate(df3_orded,suma_acumulada=cumsum(df3_orded$PUBLICCONSG))
+df3_orded <- mutate(df3_orded,porcent_acum=suma_acumulada/sum(df3_orded$PUBLICCONSG))
+causes3 <-filter(df3_orded,porcent_acum >=0.8)
+causfac3 <-factor(causes3$EVTYPE)
+mimpcauses3 <-table(causfac3)
+kable(mimpcauses3)
+
+```
+
+Graphically the scenario is as follow:
+
+```{r Pareto_health_withot, cache.comments=FALSE}
+
+cause_plot3 <- select(causes3,c("porcent_acum","EVTYPE"))
+cause_plot3$EVTYPE <-unclass(cause_plot3$EVTYPE)
+
+with(cause_plot3,hist(EVTYPE,col="blue", xlab="type of atmospherical event",ylab="frquency",main="Principal Causes of Public Health Affectation Withot the Kattrina Disaster"))
+
+```
+
+#6. Conclussions
+
+## 6.1 Public Health Affectations
+
+Regardless the effect Katrina the atmospheric events that cause the major affectation to public health and public survival are: Tornados, mainly, and Floods.
+
+## 6.2 Economic Damage
+
+In economic matters there are not dominant causes,the data interpretation trends to show a few type of events causing the major economic costs, these are : Flood, Hurricane Typhon, River Flood and Storm Surge. These events may occur with intensive strength causing severe economic damage.
+
+## 6.3 Summarizing.
+
+It can be observed that flood and wind events (Tornados and Hurricane) are in the causes of public health affectation and economic damage. This allows to public administrators take a unified public policy to protect not only the people but also the economic infrastructure (state or public infrstructure and families property), this mean that they can optimized the public disaster budget.
+
